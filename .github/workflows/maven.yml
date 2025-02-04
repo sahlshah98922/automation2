@@ -3,7 +3,7 @@ name: Build and Deploy to AKS
 on:
   push:
     branches:
-      - main   # Trigger workflow on pushes to the main branch
+      - main  # Trigger workflow on pushes to the main branch
 
 jobs:
   build:
@@ -13,25 +13,13 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v2
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v2
-      with:
-        distribution: 'temurin'  # Specify Java distribution
-        java-version: '17'
-
-    - name: Build with Maven
-      run: mvn clean install -DskipTests   # Skip tests since no database is used
-      working-directory: ./automation       # Set working directory to /automation
-
-    - name: Build Docker image
-      run: docker build -t sahilshah989/java-app:latest .
-      working-directory: ./automation       # Set working directory to /automation
-
     - name: Login to Docker Hub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: Push Docker image to Docker Hub
-      run: docker push sahilshah989/java-app:latest
+    - name: Build and push Docker image using Docker Compose
+      run: |
+        docker-compose -f ./automation/docker-compose.yml build
+        docker-compose -f ./automation/docker-compose.yml push
 
   deploy:
     needs: build
@@ -56,6 +44,6 @@ jobs:
 
     - name: Wait for 10 seconds
       run: sleep 10
- 
+
     - name: Verify Deployment
       run: kubectl get all
