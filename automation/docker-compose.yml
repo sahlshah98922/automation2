@@ -17,7 +17,7 @@ services:
 
   backend:
     build: .
-    container_name: sahilshah989/azure-deploy  # ✅ Removed ":latest" from container name
+    container_name: azure-deploy  # ✅ Removed ":latest" from container name
     restart: on-failure
     ports:
       - "9082:9082"
