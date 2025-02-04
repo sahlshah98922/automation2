@@ -21,8 +21,8 @@ jobs:
 
     - name: Build and push Docker image using Docker Compose
       run: |
-        docker-compose -f ./automation/docker-compose.yml build
-        docker-compose -f ./automation/docker-compose.yml push
+        docker compose -f ./automation/docker-compose.yml build
+        docker compose -f ./automation/docker-compose.yml push
 
   deploy:
     needs: build
