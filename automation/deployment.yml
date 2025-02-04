@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: automation-container
-        image: shahnawaz312/java-app:latest
+        image: sahilshah989/java-app:latest
         ports:
         - containerPort: 9082
         resources:
@@ -30,4 +30,4 @@ spec:
           - name: SPRING_DATASOURCE_USERNAME
             value: root
           - name: SPRING_DATASOURCE_PASSWORD
-            value: root
+            value: Root@123
