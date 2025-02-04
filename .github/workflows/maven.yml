@@ -24,29 +24,29 @@ jobs:
         docker compose -f ./automation/docker-compose.yml build
         docker compose -f ./automation/docker-compose.yml push
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
+  # deploy:
+  #   needs: build
+  #   runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v2
+  #   steps:
+  #   - name: Checkout the repository
+  #     uses: actions/checkout@v2
 
-    - name: Login to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+  #   - name: Login to Azure
+  #     uses: azure/login@v1
+  #     with:
+  #       creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Set AKS Context
-      run: az aks get-credentials --resource-group vibha --name AKSCluster
+  #   - name: Set AKS Context
+  #     run: az aks get-credentials --resource-group vibha --name AKSCluster
 
-    - name: Deploy the application to AKS
-      run: |
-        kubectl apply -f ./automation/deployment.yml
-        kubectl apply -f ./automation/service.yml
+  #   - name: Deploy the application to AKS
+  #     run: |
+  #       kubectl apply -f ./automation/deployment.yml
+  #       kubectl apply -f ./automation/service.yml
 
-    - name: Wait for 10 seconds
-      run: sleep 10
+  #   - name: Wait for 10 seconds
+  #     run: sleep 10
 
-    - name: Verify Deployment
-      run: kubectl get all
+  #   - name: Verify Deployment
+  #     run: kubectl get all
