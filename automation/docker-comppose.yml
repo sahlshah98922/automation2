@@ -1,11 +1,13 @@
+version: "3.8"
+
 services:
   db:
     image: mysql:latest
     container_name: mysql-container
     restart: on-failure
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: automation5
+      MYSQL_ROOT_PASSWORD: Root@123
+      MYSQL_DATABASE: automation5  # ✅ Database name corrected
     ports:
       - "3306:3306"
     volumes:
@@ -13,54 +15,24 @@ services:
     networks:
       - my-network
 
-
   backend:
-    build: ./.
-    container_name: corelatest-container
+    build: .
+    container_name: java-app  # ✅ Removed ":latest" from container name
     restart: on-failure
     ports:
       - "9082:9082"
     environment:
       DB_HOST: db
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: automation5
+      MYSQL_ROOT_PASSWORD: Root@123
+      MYSQL_DATABASE: automation5  # ✅ Consistent database name
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/automation4?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_DATASOURCE_PASSWORD: Root@123
+    depends_on:
+      - db  # ✅ Ensures MySQL starts before backend
     networks:
       - my-network
-
-  dotnetapi1:
-    image: dotnetapi:latest
-    container_name: dotnet-container
-    restart: on-failure
-    command: sh -c "sleep 30 && dotnet WebApplication2.dll"
-    ports:
-      - "8080:8080"
-    networks:
-      - my-network
-
-  nodeapi:
-    image: nodeapi:latest
-    container_name: nodeapi-container
-    restart: on-failure
-    command: sh -c "sleep 30 && npm start"
-    ports:
-      - "3000:3000"
-    networks:
-      - my-network
-
-  anugularapi:
-    image: angular:latest
-    container_name: angular-container
-    restart: on-failure
-    command: sh -c "sleep 30 && ng serve --host 0.0.0.0"
-    ports:
-      - "4200:4200"
-    networks:
-      - my-network
-  
 
 networks:
   my-network:
