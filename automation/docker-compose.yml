@@ -2,7 +2,7 @@ iversion: "3.8"
 
 services:
   db:
-    image: mysql:latest
+    image: mysql:8.0
     container_name: mysql-container
     restart: on-failure
     environment:
