@@ -1,62 +1,54 @@
 trigger:
-- main  # Replace with your branch name
+- main  # Change branch if needed
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'ubuntu-latest'  # Default agent
 
 variables:
-  DOCKER_REGISTRY: 'sahilshah989'  # Tumhara Docker Hub username
-  DOCKER_IMAGE_NAME: 'automate'  # Tumhara image ka naam
+  DOCKER_IMAGE_NAME: 'automate'  # Your image name
   DOCKER_IMAGE_TAG: 'latest'
-  JAVA_HOME: '/usr/lib/jvm/java-1.17.0-openjdk-amd64'
 
-stages:
-- stage: Build
+steps:
+- script: |
+    sudo chmod 666 /var/run/docker.sock
+  displayName: 'Set Docker Socket Permissions'
+
+- script: |
+    echo "JAVA_HOME is set to: $(JAVA_HOME)"
+    echo "Maven Path: $(which mvn)"
+  displayName: 'Verify Java & Maven Setup'
+
+- task: Maven@4
+  inputs:
+    mavenPomFile: 'automation/pom.xml'  # Update the path if needed
+    publishJUnitResults: true
+    goals: 'clean install -DskipTests'
+    javaHomeOption: 'Path'
+    jdkDirectory: '/usr/lib/jvm/java-1.17.0-openjdk-amd64'
+    mavenVersionOption: 'Path'
+    mavenDirectory: '/usr'
+    options: '-X'
   displayName: 'Build Java Application'
-  jobs:
-  - job: Build
-    displayName: 'Build Java and Create Docker Image'
-    steps:
-      - script: |
-          sudo chmod 666 /var/run/docker.sock
-        displayName: 'Set Docker socket permissions'
 
-      - script: |
-          echo "JAVA_HOME is set to: $(JAVA_HOME)"
-          echo "Maven Path: $(which mvn)"
-        displayName: 'Verify Java & Maven'
+- script: |
+    echo "Contents of target directory:"
+    ls -l automation/target/
+  displayName: 'Verify JAR File Generation'
 
-      - task: Maven@4
-        inputs:
-          mavenPomFile: 'automation/pom.xml'  # Update the correct path
-          publishJUnitResults: true
-          goals: 'clean install -DskipTests'
-          javaHomeOption: 'Path'
-          jdkDirectory: '$(JAVA_HOME)'
-          mavenVersionOption: 'Path'
-          mavenDirectory: '/usr'
-          options: '-X'
-        displayName: 'Build Java Application'
+- task: Docker@2
+  displayName: 'Build Docker Image'
+  inputs:
+    command: 'build'
+    repository: 'sahilshah989/automate'  # Change with your Docker Hub repo
+    dockerfile: 'automation/Dockerfile'
+    buildContext: 'automation'
+    tags: 'latest'
+    containerRegistry: 'dockerhub_connection'  # Your Azure DevOps Service Connection Name
 
-      - script: |
-          echo "Contents of target directory:"
-          ls -l automation/target/
-        displayName: 'Verify JAR File'
-
-      - script: |
-          echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_REGISTRY) --password-stdin
-        env:
-          DOCKER_PASSWORD: $(DOCKER_PASSWORD)  # Secret variable in Azure DevOps
-        displayName: 'Login to Docker Hub'
-
-      - script: |
-          docker build -t "$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" -f automation/Dockerfile automation
-        displayName: 'Build Docker Image'
-
-      - script: |
-          docker push "$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
-        displayName: 'Push Docker Image to Docker Hub'
-
-      - script: |
-          echo "Docker Image Successfully Pushed: $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
-        displayName: 'Success Message'
+- task: Docker@2
+  displayName: 'Push Docker Image to Docker Hub'
+  inputs:
+    command: 'push'
+    repository: 'sahilshah989/automate'  # Change with your Docker Hub repo
+    tags: 'latest'
+    containerRegistry: 'dockerhub_connection'  # Your Azure DevOps Service Connection Name
