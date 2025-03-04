@@ -2,7 +2,7 @@ trigger:
 - main  # Change branch if needed
 
 pool:
-  vmImage: 'Default'  # Default agent
+  name: 'Default'  # Default agent
 
 variables:
   DOCKER_IMAGE_NAME: 'automate'  # Your image name
