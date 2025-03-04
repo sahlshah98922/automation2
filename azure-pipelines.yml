@@ -1,54 +1,55 @@
 trigger:
 - main  # Change branch if needed
 
-pool:
-  name: 'Default'  # Default agent
-
-variables:
-  DOCKER_IMAGE_NAME: 'automate'  # Your image name
-  DOCKER_IMAGE_TAG: 'latest'
-
-steps:
-- script: |
-    sudo chmod 666 /var/run/docker.sock
-  displayName: 'Set Docker Socket Permissions'
-
-- script: |
-    echo "JAVA_HOME is set to: $(JAVA_HOME)"
-    echo "Maven Path: $(which mvn)"
-  displayName: 'Verify Java & Maven Setup'
-
-- task: Maven@4
-  inputs:
-    mavenPomFile: 'automation/pom.xml'  # Update the path if needed
-    publishJUnitResults: true
-    goals: 'clean install -DskipTests'
-    javaHomeOption: 'Path'
-    jdkDirectory: '/usr/lib/jvm/java-1.17.0-openjdk-amd64'
-    mavenVersionOption: 'Path'
-    mavenDirectory: '/usr'
-    options: '-X'
+jobs:
+- job: Build
   displayName: 'Build Java Application'
+  pool:
+    name: 'Default'  # Use Hosted Agent
 
-- script: |
-    echo "Contents of target directory:"
-    ls -l automation/target/
-  displayName: 'Verify JAR File Generation'
+  variables:
+    DOCKER_IMAGE_NAME: 'automate'  # Docker image name
+    DOCKER_IMAGE_TAG: 'latest'
+    MAVEN_OPTS: '-Xmx1024m'
 
-- task: Docker@2
-  displayName: 'Build Docker Image'
-  inputs:
-    command: 'build'
-    repository: 'sahilshah989/automate'  # Change with your Docker Hub repo
-    dockerfile: 'automation/Dockerfile'
-    buildContext: 'automation'
-    tags: 'latest'
-    containerRegistry: 'dockerhub_connection'  # Your Azure DevOps Service Connection Name
+  steps:
+  - checkout: self
 
-- task: Docker@2
-  displayName: 'Push Docker Image to Docker Hub'
-  inputs:
-    command: 'push'
-    repository: 'sahilshah989/automate'  # Change with your Docker Hub repo
-    tags: 'latest'
-    containerRegistry: 'dockerhub_connection'  # Your Azure DevOps Service Connection Name
+  - script: |
+      sudo chmod 666 /var/run/docker.sock
+    displayName: 'Set Docker Socket Permissions'
+
+  - script: |
+      echo "JAVA_HOME is set to: $(JAVA_HOME)"
+      echo "Maven Path: $(which mvn)"
+    displayName: 'Verify Java & Maven Setup'
+
+  - task: Maven@3
+    inputs:
+      mavenPomFile: 'automation/pom.xml'  # Update the path if needed
+      publishJUnitResults: true
+      goals: 'clean install -DskipTests'
+    displayName: 'Build Java Application'
+
+  - script: |
+      echo "Contents of target directory:"
+      ls -l automation/target/
+    displayName: 'Verify JAR File Generation'
+
+  - task: Docker@2
+    displayName: 'Build Docker Image'
+    inputs:
+      command: 'build'
+      repository: 'sahilshah989/automate'  # Change with your Docker Hub repo
+      dockerfile: 'automation/Dockerfile'
+      buildContext: 'automation'
+      tags: '$(DOCKER_IMAGE_TAG)'
+      containerRegistry: 'dockerhub_connection'  # Your Azure DevOps Service Connection Name
+
+  - task: Docker@2
+    displayName: 'Push Docker Image to Docker Hub'
+    inputs:
+      command: 'push'
+      repository: 'sahilshah989/automate'  # Change with your Docker Hub repo
+      tags: '$(DOCKER_IMAGE_TAG)'
+      containerRegistry: 'dockerhub_connection'  # Your Azure DevOps Service Connection Name
