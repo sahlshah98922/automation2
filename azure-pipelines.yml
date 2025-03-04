@@ -1,19 +1,62 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- main
+- main  # Replace with your branch name
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+variables:
+  DOCKER_REGISTRY: 'sahilshah989'  # Tumhara Docker Hub username
+  DOCKER_IMAGE_NAME: 'automate'  # Tumhara image ka naam
+  DOCKER_IMAGE_TAG: 'latest'
+  JAVA_HOME: '/usr/lib/jvm/java-1.17.0-openjdk-amd64'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+stages:
+- stage: Build
+  displayName: 'Build Java Application'
+  jobs:
+  - job: Build
+    displayName: 'Build Java and Create Docker Image'
+    steps:
+      - script: |
+          sudo chmod 666 /var/run/docker.sock
+        displayName: 'Set Docker socket permissions'
+
+      - script: |
+          echo "JAVA_HOME is set to: $(JAVA_HOME)"
+          echo "Maven Path: $(which mvn)"
+        displayName: 'Verify Java & Maven'
+
+      - task: Maven@4
+        inputs:
+          mavenPomFile: 'automation/pom.xml'  # Update the correct path
+          publishJUnitResults: true
+          goals: 'clean install -DskipTests'
+          javaHomeOption: 'Path'
+          jdkDirectory: '$(JAVA_HOME)'
+          mavenVersionOption: 'Path'
+          mavenDirectory: '/usr'
+          options: '-X'
+        displayName: 'Build Java Application'
+
+      - script: |
+          echo "Contents of target directory:"
+          ls -l automation/target/
+        displayName: 'Verify JAR File'
+
+      - script: |
+          echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_REGISTRY) --password-stdin
+        env:
+          DOCKER_PASSWORD: $(DOCKER_PASSWORD)  # Secret variable in Azure DevOps
+        displayName: 'Login to Docker Hub'
+
+      - script: |
+          docker build -t "$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" -f automation/Dockerfile automation
+        displayName: 'Build Docker Image'
+
+      - script: |
+          docker push "$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
+        displayName: 'Push Docker Image to Docker Hub'
+
+      - script: |
+          echo "Docker Image Successfully Pushed: $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
+        displayName: 'Success Message'
