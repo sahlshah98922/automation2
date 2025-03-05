@@ -53,3 +53,19 @@ jobs:
       repository: 'sahilshah989/automate'  # Change with your Docker Hub repo
       tags: '$(DOCKER_IMAGE_TAG)'
       containerRegistry: 'dockerhub_connection'  # Your Azure DevOps Service Connection Name
+
+- job: Deploy
+  displayName: 'Deploy to AKS'
+  pool:
+    name: 'Default'  # Change to your agent pool
+
+  steps:
+  - task: KubernetesManifest@0
+    displayName: 'Deploy Application to AKS'
+    inputs:
+      action: 'deploy'
+      namespace: 'default'  # Change if needed
+      manifests: |
+        automation/deployment.yml
+        automation/service.yml
+      kubernetesServiceConnection: 'AKS_Connection'  # Replace with your actual service connection
